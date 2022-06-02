@@ -5,9 +5,47 @@
 #include "Objeto.h"
 #include "BoundingVolume.h"
 
-void Objeto::addInstance(glm::vec3 size, float mass, glm::vec3 pos) {
-	RigidBody* rb = new RigidBody(size, mass, pos);
-	instances.push_back(rb);
+Objeto::Objeto()
+	: position(glm::vec3(0.0f)), size(glm::vec3(1.0f)), velocity(glm::vec3(0.0f)), direction(glm::vec3(0.0f)) {}
+
+Objeto::Objeto(glm::vec3 position, glm::vec3 size)
+	: position(position), size(size), velocity(glm::vec3(0.0f)), direction(glm::vec3(0.0f)) {}
+
+void Objeto::display(Shader& sh) {
+	model = glm::mat4(1.0f);
+	model = glm::scale(model, size);
+	model = glm::translate(model, position);
+	sh.setMat4("model", model);
+	if (visible) {
+		VAO.bind();
+		VAO.draw(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, indices.data());
+		ArrayObject::clear();
+	}
+}
+
+void Objeto::calcularColision(std::vector<Objeto*> pObjetos) {
+	for (Objeto* obj : pObjetos) {
+		if (obj != this and bv->checkCollision(obj->bv)) {
+
+			std::cout << "Positions" << std::endl;
+			std::cout << glm::to_string(position) << " - " << glm::to_string(obj->position) << std::endl;
+
+			std::cout << "Min & Max" << std::endl;
+			std::cout << glm::to_string(bv->min) << ":" << glm::to_string(bv->max) << std::endl;
+			std::cout << glm::to_string(obj->bv->min) << ":" << glm::to_string(obj->bv->max) << std::endl;
+			obj->moverse(direction);
+		}
+	}
+}
+
+Esfera::Esfera(glm::vec3 position, glm::vec3 size)
+	: Objeto::Objeto(position, size) {}
+
+Esfera::Esfera(Esfera* esf, glm::vec3 position, glm::vec3 size) : Objeto::Objeto(position, size) {
+	VAO = esf->VAO;
+	indices_size = esf->indices_size;
+	bv = new BoundingVolume(center, radius);
+	bv->transform(this);
 }
 
 void Esfera::init() {
@@ -41,9 +79,11 @@ void Esfera::init() {
 		indices.push_back(i);
 		indices.push_back(i + 1);
 	}
+
+	indices_size = indices.size();
 }
 
-GLuint Esfera::setup() {
+void Esfera::setup() {
 	VAO = ArrayObject();
 
 	VAO.generate();
@@ -76,116 +116,108 @@ GLuint Esfera::setup() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	indices_size = indices.size();
-
-	addInstance(glm::vec3(1.0f), 1.0f, glm::vec3(0.0f));
-
-	return vao;
+	bv = new BoundingVolume(center, radius);
+	bv->transform(this);
 }
 
-void Esfera::display(Shader& sh) {
-	model = glm::mat4(1.0);
-	model = glm::scale(model, glm::vec3(0.5f));
-	model = glm::translate(model, centro);
-	sh.setMat4("model", model);
-	if (visible) {
-		VAO.bind();
-		VAO.draw(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, indices.data());
-		ArrayObject::clear();
-	}
+void Esfera::update(float dt) {
+	float g = 9.81f;
+	glm::vec3 ogPosition = position;
+	position.x = ogPosition.x + velocity.x * cos(glm::radians(angle)) * dt;
+	position.y = ogPosition.y + velocity.y * sin(glm::radians(angle)) * dt - 0.5 * g * dt * dt;
+	direction = position - ogPosition;
+	bv->transform(this);
 }
 
-void Esfera::actualizarDatos(float t) {
-	float g = 9.81;
-	glm::vec3 tmp = centro;
-	centro.x = pos_ini.x + vel_ini.x * cos(glm::radians(ang_ini)) * t;
-	centro.y = pos_ini.y + vel_ini.y * sin(glm::radians(ang_ini)) * t - 0.5 * g * t * t;
-	dir = centro - tmp;
-	bv->calcular(*this);
-	std::cout << t << "\t" << to_string(pos_ini) << "\t" << to_string(centro) << std::endl;
-}
 
-void Esfera::calcularColision(std::vector<Objeto*> pObjetos) {
-	for (auto& obj : pObjetos) {
-		if (this != obj and bv->ColisionBox(static_cast<BoundingBox*>(obj->bv))) {
-			// reacciónar a la colision
-			std::cout << "Hay colision \n";
-			obj->moverse(dir);
-		}
-	}
-}
 void Esfera::moverse(glm::vec3 dir) {
-	centro += dir;
-	bv->calcular(*this);
+	position += dir;
+	bv->transform(this);
+}
+
+
+Caja::Caja(glm::vec3 position, glm::vec3 size) : Objeto::Objeto(position, size) {
+	indices_size = 36;
+}
+
+Caja::Caja(Caja* caja, glm::vec3 position, glm::vec3 size) : Objeto::Objeto(position, size) {
+	VAO = caja->VAO;
+	indices_size = caja->indices_size;
+	bv = new BoundingVolume(posmin, posmax);
+	bv->transform(this);
 }
 
 void Caja::init() {
-	glm::vec3 esquina1 = glm::vec3(posmin.x, posmin.y, posmin.z); // - - -
-	glm::vec3 esquina2 = glm::vec3(posmin.x, posmin.y, posmax.z); // - - +
-	glm::vec3 esquina3 = glm::vec3(posmax.x, posmin.y, posmin.z); // + - -
-	glm::vec3 esquina4 = glm::vec3(posmax.x, posmin.y, posmax.z); // + - +
-
-	glm::vec3 esquina5 = glm::vec3(posmin.x, posmax.y, posmin.z); // - + -
-	glm::vec3 esquina6 = glm::vec3(posmin.x, posmax.y, posmax.z); // - + +
-	glm::vec3 esquina7 = glm::vec3(posmax.x, posmax.y, posmin.z); // + + -
-	glm::vec3 esquina8 = glm::vec3(posmax.x, posmax.y, posmax.z); // + + +
-
 	positions = {
-		esquina1, esquina3, esquina7,
-		esquina7, esquina5, esquina1,
+		glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(1.0f,  1.0f, -1.0f),
+		glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, -1.0f),
 
-		esquina2, esquina4, esquina8,
-		esquina8, esquina6, esquina2,
+		glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(1.0f, -1.0f,  1.0f), glm::vec3(1.0f,  1.0f,  1.0f),
+		glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(-1.0f, -1.0f,  1.0f),
 
-		esquina6, esquina5, esquina1,
-		esquina1, esquina2, esquina6,
+		glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(-1.0f, -1.0f, -1.0f),
+		glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(-1.0f,  1.0f,  1.0f),
 
-		esquina8, esquina7, esquina3,
-		esquina3, esquina4, esquina8,
+		glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f),
+		glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f,  1.0f), glm::vec3(1.0f,  1.0f,  1.0f),
 
-		esquina1, esquina3, esquina4,
-		esquina4, esquina2, esquina1,
+		glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f, -1.0f), glm::vec3(1.0f, -1.0f,  1.0f),
+		glm::vec3(1.0f, -1.0f,  1.0f), glm::vec3(-1.0f, -1.0f,  1.0f), glm::vec3(-1.0f, -1.0f, -1.0f),
 
-		esquina5, esquina7, esquina8,
-		esquina8, esquina6, esquina5
+		glm::vec3(-1.0f,  1.0f, -1.0f), glm::vec3(1.0f,  1.0f, -1.0f), glm::vec3(1.0f,  1.0f,  1.0f),
+		glm::vec3(1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f,  1.0f), glm::vec3(-1.0f,  1.0f, -1.0f),
 	};
-
-	glm::vec3 normal1 = glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::vec3 normal2 = glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 normal3 = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 normal4 = glm::vec3(0.0f, -1.0f, 0.0f);
-	glm::vec3 normal5 = glm::vec3(1.0f, 0.0f, 0.0f);
-	glm::vec3 normal6 = glm::vec3(-1.0f, 0.0f, 0.0f);
 
 	normals = {
-		normal2, normal2, normal2, normal2, normal2, normal2,
-		normal1, normal1, normal1, normal1, normal1, normal1,
-		normal6, normal6, normal6, normal6, normal6, normal6,
-		normal5, normal5, normal5, normal5, normal5, normal5,
-		normal4, normal4, normal4, normal4, normal4, normal4,
-		normal3, normal3, normal3, normal3, normal3, normal3
+		// normal
+		glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f,  0.0f, -1.0f),
+		glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f,  0.0f, -1.0f),
+
+		glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f,  0.0f,  1.0f),
+		glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f,  0.0f,  1.0f),
+
+		glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(-1.0f,  0.0f,  0.0f),
+		glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(-1.0f,  0.0f,  0.0f),
+
+		glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(1.0f,  0.0f,  0.0f),
+		glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(1.0f,  0.0f,  0.0f),
+
+		glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f),
+		glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f),
+
+		glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  1.0f,  0.0f),
+		glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  1.0f,  0.0f),
 	};
 
-	glm::vec2 tex1 = glm::vec2(0.0f, 0.0f);
-	glm::vec2 tex2 = glm::vec2(0.0f, 1.0f);
-	glm::vec2 tex3 = glm::vec2(1.0f, 0.0f);
-	glm::vec2 tex4 = glm::vec2(1.0f, 1.0f);
-
 	textureCoords = {
-		tex1, tex3, tex4, tex4, tex2, tex1,
-		tex1, tex3, tex4, tex4, tex2, tex1,
-		tex3, tex4, tex2, tex2, tex1, tex3,
-		tex3, tex4, tex2, tex2, tex1, tex3,
-		tex2, tex4, tex3, tex3, tex1, tex2,
-		tex2, tex4, tex3, tex3, tex1, tex2,
+		//texcoord
+		  glm::vec2(0.0f, 0.0f),glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f),
+		  glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::vec2(0.0f, 0.0f),
+
+		  glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f),
+		  glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::vec2(0.0f, 0.0f),
+
+		  glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f),
+		  glm::vec2(0.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f),
+
+		  glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f),
+		  glm::vec2(0.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f),
+
+		  glm::vec2(0.0f, 1.0f), glm::vec2(1.0f, 1.0f), glm::vec2(1.0f, 0.0f),
+		  glm::vec2(1.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 1.0f),
+
+		  glm::vec2(0.0f, 1.0f), glm::vec2(1.0f, 1.0f), glm::vec2(1.0f, 0.0f),
+		  glm::vec2(1.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 1.0f)
 	};
 
 	for (int i = 0; i < indices_size; i++) {
 		indices.push_back(i);
 	}
+
+	indices_size = indices.size();
 }
 
-GLuint Caja::setup() {
+void Caja::setup() {
 	VAO = ArrayObject();
 
 	VAO.generate();
@@ -218,28 +250,20 @@ GLuint Caja::setup() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	indices_size = indices.size();
-
-	return vao;
+	bv = new BoundingVolume(posmin, posmax);
+	bv->transform(this);
 }
 
-void Caja::display(Shader& sh) {
-	model = glm::mat4(1.0f);
-	model = glm::scale(model, glm::vec3(1.0f));
-	model = glm::translate(model, pos_ini);
-	sh.setMat4("model", model);
-	if (visible) {
-		VAO.bind();
-		VAO.draw(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, indices.data());
-		ArrayObject::clear();
-	}
-}
-
-void Caja::actualizarDatos(float t) {
+void Caja::update(float dt) {
 	float g = 9.81f;
-
+	glm::vec3 ogPosition = position;
+	position.x = ogPosition.x + velocity.x * cos(glm::radians(angle)) * dt;
+	position.y = ogPosition.y + velocity.y * sin(glm::radians(angle)) * dt - 0.5 * g * dt * dt;
+	direction = position - ogPosition;
+	bv->transform(this);
 }
 
-void Caja::calcularColision(std::vector<Objeto*> pObjetos) {}
-
-void Caja::moverse(glm::vec3 dir) {}
+void Caja::moverse(glm::vec3 dir) {
+	position += dir;
+	bv->transform(this);
+}

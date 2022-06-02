@@ -15,7 +15,7 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, float dt);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -28,9 +28,8 @@ float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
 // timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-float tiempoInicial = 0.0f, tiempoTranscurrido = 0.0f;
+double dt = 0.0f; // tme btwn frames
+double lastFrame = 0.0f; // time of last frame
 
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
@@ -39,39 +38,45 @@ int luna_numIndices;
 GLint POSITION_ATTRIBUTE = 0, NORMAL_ATTRIBUTE = 1, TEXCOORD0_ATTRIBUTE = 8;
 
 std::vector<Objeto*> pObjetos;
-Esfera esfera(glm::vec3(0), 2., 100, 100);
-bool proyectil_listo = false;
-Esfera* proyectil = new Esfera();
 
+Esfera esfera(glm::vec3(0.0f), glm::vec3(1.0f));
 
 Caja caja(glm::vec3(0.0f), glm::vec3(1.0f));
 
+bool proyectil_listo = false;
+Esfera* proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
+
+
 void Escena1() {
-	Esfera* esfera1 = new Esfera(glm::vec3(30, 0, 0));
-	esfera1->VAO = esfera.VAO;
-	esfera1->indices_size = esfera.indices_size;
-	esfera1->radius = esfera.radius;
-	esfera1->fijo = true;
-	esfera1->bv = new BoundingBox();
-	esfera1->bv->calcular(*esfera1);
+	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -10.0f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
+	plane->fixed = true;
+	plane->bv->transform(plane);
+	pObjetos.emplace_back(plane);
+
+	Esfera* esfera1 = new Esfera(&esfera, glm::vec3(0.0f, 00.0f, 0.0f), glm::vec3(1.0f));
+	esfera1->fixed = false;
+	esfera1->bv->transform(esfera1);
 	pObjetos.emplace_back(esfera1);
 
-	Esfera* esfera2 = new Esfera(glm::vec3(40, 0, 0));
-	esfera2->VAO = esfera.VAO;
-	esfera2->indices_size = esfera.indices_size;
-	esfera2->radius = esfera.radius;
-	esfera2->fijo = true;
-	esfera2->bv = new BoundingBox();
-	esfera2->bv->calcular(*esfera2);
-	pObjetos.emplace_back(esfera2);
+	/*Esfera* esfera2 = new Esfera(&esfera, glm::vec3(40.0f, 10.0f, 0.0f), glm::vec3(1.0f));
+	esfera2->fixed = true;
+	esfera2->bv->transform(esfera2);
+	pObjetos.emplace_back(esfera2);*/
 
-	Caja* caja1 = new Caja(caja.posmin, caja.posmax);
-	caja1->VAO = caja.VAO;
-	caja1->indices_size = caja.indices_size;
-	caja1->fijo = true;
-	caja1->bv = new BoundingBox();
-	caja1->bv->calcular(*caja1);
+	Caja* caja1 = new Caja(&caja, glm::vec3(10.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	caja1->fixed = false;
+	caja1->bv->transform(caja1);
 	pObjetos.emplace_back(caja1);
+
+	/*Caja* caja2 = new Caja(&caja, glm::vec3(30.0f, 10.0f, 0.0f), glm::vec3(2.0f));
+	caja2->fixed = true;
+	caja2->bv->transform(caja2);
+	pObjetos.emplace_back(caja2);*/
+
+	/*Caja* caja3 = new Caja(&caja, glm::vec3(30.0f, 15.0f, 0.0f), glm::vec3(2.0f));
+	caja3->fixed = true;
+	caja3->bv->transform(caja3);
+	pObjetos.emplace_back(caja3);*/
 }
 
 int main() {
@@ -112,10 +117,12 @@ int main() {
 	// configure global opengl state
 	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // disable cursor
 
 	// build and compile our shader zprogram
 	// ------------------------------------
 	Shader lightingShader("resources/shaders/basic.vert", "resources/shaders/basic.frag");
+	Shader boxShader("resources/shaders/box.vert", "resources/shaders/box.frag");
 	//Shader lightCubeShader("../2.2.light_cube.vs", "../2.2.light_cube.fs");
 
 	esfera.init();
@@ -130,12 +137,12 @@ int main() {
 	// render loop
 	while (!glfwWindowShouldClose(window)) {
 		// per-frame time logic
-		float currentFrame = static_cast<float>(glfwGetTime());
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
-		tiempoTranscurrido = currentFrame - tiempoInicial; //static_cast<float>(glfwGetTime());
-		std::cout << tiempoInicial << "\t";
-		processInput(window);
+		double currentTime = glfwGetTime();
+		dt = currentTime - lastFrame;
+		lastFrame = currentTime;
+
+		processInput(window, dt);
+
 		// render
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -154,8 +161,8 @@ int main() {
 		lightingShader.setMat4("view", view);
 
 		for (auto& obj : pObjetos) {
-			if (!obj->fijo) {
-				obj->actualizarDatos(tiempoTranscurrido);
+			if (!obj->fixed) {
+				obj->update(dt);
 			}
 			// calcular si hay colision
 			obj->calcularColision(pObjetos);
@@ -182,35 +189,33 @@ int main() {
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, float dt)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
+		camera.ProcessKeyboard(FORWARD, dt * 4);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
+		camera.ProcessKeyboard(BACKWARD, dt * 4);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
+		camera.ProcessKeyboard(LEFT, dt * 4);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
+		camera.ProcessKeyboard(RIGHT, dt * 4);
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 		if (!proyectil_listo) {
 			float x = rand() % 10;
 			float y = rand() % 10;
-			float z = rand() % 10;
-			proyectil->VAO = esfera.VAO;
+
+			proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
+			proyectil->position = glm::vec3(x, y, 0.0f);
+			proyectil->velocity = glm::vec3(20.0f, 10.0f, 0.0f);
+			proyectil->angle = 20.0f;
 			proyectil->indices_size = esfera.indices_size;
-			proyectil->radius = esfera.radius;
-			proyectil->bv = new BoundingBox();
-			proyectil->bv->calcular(*proyectil);
+			proyectil->bv->transform(proyectil);
 			pObjetos.emplace_back(proyectil);
+
 			proyectil_listo = true;
-			proyectil->vel_ini = glm::vec3(20, 10, 0);
-			proyectil->pos_ini = glm::vec3(x, y, z);
-			proyectil->ang_ini = 45;
-			tiempoInicial = static_cast<float>(glfwGetTime());
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE) {

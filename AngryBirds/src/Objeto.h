@@ -30,83 +30,60 @@ public:
 	std::vector<glm::vec2> textureCoords;
 	std::vector<GLuint> indices;
 
-	//std::vector<BoundingRegion*> regions;
-
 	GLuint indices_size;
-	GLuint vao;
 
 	ArrayObject VAO;
 
 	glm::mat4 model;
-	bool visible = true;
+
 	BoundingVolume* bv;
 
-	glm::vec3 vel_ini, pos_ini;
-	float ang_ini;
-	bool fijo = false;
-	glm::vec3 dir;
+	glm::vec3 size, position;
+	glm::vec3 velocity, direction;
+	float angle;
 
-	void addInstance(glm::vec3 size, float mass, glm::vec3 pos);
+	bool fixed = false;
+	bool visible = true;
+
+	Objeto();
+	Objeto(glm::vec3 position, glm::vec3 size);
 
 	virtual void init() = 0;
-	virtual GLuint setup() = 0;
-	virtual void display(Shader& sh) = 0;
-	virtual void actualizarDatos(float t) = 0;
-	virtual void calcularColision(std::vector<Objeto*> pObjetos) = 0;
+	virtual void setup() = 0;
+
+	void display(Shader& sh);
+	virtual void update(float dt) = 0;
+
+	void calcularColision(std::vector<Objeto*> pObjetos);
 	virtual void moverse(glm::vec3 dir) = 0;
 };
 
-class Esfera :public Objeto {
+class Esfera : public Objeto {
 public:
-	glm::vec3 centro;
-	float radius;
-	int slices, stacks;
+	glm::vec3 center = glm::vec3(0.0f);
+	float radius = 1.0f;
+	int slices = 100, stacks = 100;
 
-	Esfera() {
-		centro = glm::vec3(0.0);
-		pos_ini = centro;
-		vel_ini = glm::vec3(0);
-	}
-	Esfera(glm::vec3 _centro) {
-		centro = _centro;
-		pos_ini = centro;
-		vel_ini = glm::vec3(0);
-	}
-	Esfera(glm::vec3 _centro, float _radius, int _slices, int _stacks) {
-		centro = _centro;
-		pos_ini = centro;
-		vel_ini = glm::vec3(0);
-		radius = _radius;
-		slices = _slices;
-		stacks = _stacks;
-	}
+	Esfera(glm::vec3 position, glm::vec3 size);
+	Esfera(Esfera* esf, glm::vec3 position, glm::vec3 size);
 
 	void init();
-	GLuint setup();
-	void display(Shader& sh);
-	void actualizarDatos(float t);
-	void calcularColision(std::vector<Objeto*> pObjetos);
+	void setup();
+	void update(float dt);
 	void moverse(glm::vec3 dir);
 };
 
 class Caja : public Objeto {
 public:
-	glm::vec3 posmin, posmax;
+	glm::vec3 posmin = glm::vec3(-1.0f);
+	glm::vec3 posmax = glm::vec3(1.0f);
 
-	Caja(glm::vec3 min, glm::vec3 max) :posmin(min), posmax(max) {
-		indices_size = 36;
-	}
-	Caja() {
-		indices_size = 36;
-		posmin = glm::vec3(0.0);
-		posmax = glm::vec3(1.0);
-	}
+	Caja(glm::vec3 position, glm::vec3 size);
+	Caja(Caja* caja, glm::vec3 position, glm::vec3 size);
 
 	void init();
-	GLuint setup();
-	void display(Shader& sh);
-	void actualizarDatos(float t);
-	void calcularColision(std::vector<Objeto*> pObjetos);
+	void setup();
+	void update(float dt);
 	void moverse(glm::vec3 dir);
 };
 
