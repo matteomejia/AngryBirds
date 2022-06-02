@@ -46,9 +46,10 @@ Caja caja(glm::vec3(0.0f), glm::vec3(1.0f));
 bool proyectil_listo = false;
 Esfera* proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 
+float shootingAngle = 45.0f;
 
 void Escena1() {
-	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -12.0f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
+	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
 	plane->fixed = true;
 	plane->bv->transform(plane);
 	plane->color = glm::vec3(0.2f, 0.2f, 0.2f);
@@ -199,12 +200,32 @@ void processInput(GLFWwindow* window, float dt)
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		camera.ProcessKeyboard(FORWARD, dt * 4);
+
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		camera.ProcessKeyboard(BACKWARD, dt * 4);
+
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		camera.ProcessKeyboard(LEFT, dt * 4);
+
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, dt * 4);
+
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		shootingAngle += 5.0f;
+		if (shootingAngle > 90.0f) {
+			shootingAngle = 90.0f;
+		}
+		std::cout << "Angulo: " << shootingAngle << std::endl;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		shootingAngle -= 5.0f;
+		if (shootingAngle < 0.0f) {
+			shootingAngle = 0.0f;
+		}
+		std::cout << "Angulo: " << shootingAngle << std::endl;
+	}
+
 	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 		if (!proyectil_listo) {
 			float x = rand() % 10;
@@ -212,8 +233,8 @@ void processInput(GLFWwindow* window, float dt)
 
 			proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 			proyectil->position = glm::vec3(x, y, 0.0f);
-			proyectil->velocity = glm::vec3(2, 1, 0);
-			proyectil->angle = 30.0f;
+			proyectil->velocity = glm::vec3(20.0f, 10.0f, 0);
+			proyectil->angle = shootingAngle;
 			proyectil->color = glm::vec3(1.0f, 0.1f, 0.1f);
 			proyectil->indices_size = esfera.indices_size;
 			proyectil->bv->transform(proyectil);

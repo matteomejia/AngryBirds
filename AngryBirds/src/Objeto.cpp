@@ -27,13 +27,6 @@ void Objeto::display(Shader& sh) {
 void Objeto::calcularColision(std::vector<Objeto*> pObjetos) {
 	for (Objeto* obj : pObjetos) {
 		if (obj != this and bv->checkCollision(obj->bv)) {
-
-			std::cout << "Positions" << std::endl;
-			std::cout << glm::to_string(position) << " - " << glm::to_string(obj->position) << std::endl;
-
-			std::cout << "Min & Max" << std::endl;
-			std::cout << glm::to_string(bv->min) << ":" << glm::to_string(bv->max) << std::endl;
-			std::cout << glm::to_string(obj->bv->min) << ":" << glm::to_string(obj->bv->max) << std::endl;
 			obj->moverse(direction);
 		}
 	}
@@ -122,9 +115,7 @@ void Esfera::setup() {
 }
 
 void Esfera::update(float dt) {
-	float g = 9.81f;
-	if (fixed) return;
-
+	float g = fixed ? 0.0f : 9.81f;
 	glm::vec3 ogPosition = position;
 	position.x = ogPosition.x + velocity.x * cos(glm::radians(angle)) * dt;
 	position.y = ogPosition.y + velocity.y * sin(glm::radians(angle)) * dt - 0.5 * g * dt * dt;
