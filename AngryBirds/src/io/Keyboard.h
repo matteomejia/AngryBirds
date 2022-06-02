@@ -4,10 +4,11 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+// las variables y funciones son estaticas pq solo existe un teclado
 class Keyboard
 {
 public:
-    //callback
+    // callback
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     // devuelve el estado de una tecla
     static bool key(int key);

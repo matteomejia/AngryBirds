@@ -142,6 +142,7 @@
     <ClCompile Include="src\io\Mouse.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Objeto.cpp" />
+    <ClCompile Include="src\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\BoundingVolume.h" />
@@ -150,6 +151,7 @@
     <ClInclude Include="src\io\Mouse.h" />
     <ClInclude Include="src\Memory.h" />
     <ClInclude Include="src\Objeto.h" />
+    <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\shader_m.h" />
   </ItemGroup>
   <ItemGroup>

@@ -28,6 +28,7 @@ public:
 
 	// color
 	glm::vec3 color = glm::vec3(1.0f);
+	float rotate = 45.0f;
 
 	GLuint indices_size;
 
