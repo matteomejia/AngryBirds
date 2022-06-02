@@ -137,14 +137,17 @@
     <ClCompile Include="lib\glad.c" />
     <ClCompile Include="lib\stb_image.cpp" />
     <ClCompile Include="src\BoundingVolume.cpp" />
+    <ClCompile Include="src\io\Camera.cpp" />
     <ClCompile Include="src\io\Keyboard.cpp" />
+    <ClCompile Include="src\io\Mouse.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Objeto.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\BoundingVolume.h" />
-    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\io\Camera.h" />
     <ClInclude Include="src\io\Keyboard.h" />
+    <ClInclude Include="src\io\Mouse.h" />
     <ClInclude Include="src\Memory.hpp" />
     <ClInclude Include="src\Objeto.h" />
     <ClInclude Include="src\shader_m.h" />

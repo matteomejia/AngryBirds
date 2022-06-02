@@ -6,17 +6,16 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "shader_m.h"
-#include "camera.h"
 #include "Objeto.h"
 #include "BoundingVolume.h"
 
 #include "io/Keyboard.h"
+#include "io/Camera.h"
+#include "io/Mouse.h"
 
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, float dt);
 
 // settings
@@ -25,31 +24,26 @@ const unsigned int SCR_HEIGHT = 600;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 50.0f));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
 
 // timing
 double dt = 0.0f; // tme btwn frames
 double lastFrame = 0.0f; // time of last frame
 
 // lighting
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+glm::vec3 lightPos(0.0f, 10.0f, 0.0f);
 GLuint luna_vao;
 int luna_numIndices;
-GLint POSITION_ATTRIBUTE = 0, NORMAL_ATTRIBUTE = 1, TEXCOORD0_ATTRIBUTE = 8;
 
 std::vector<Objeto*> pObjetos;
 
 Esfera esfera(glm::vec3(0.0f), glm::vec3(1.0f));
-
 Caja caja(glm::vec3(0.0f), glm::vec3(1.0f));
 
-bool proyectil_listo = false;
 Esfera* proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
-
 float shootingAngleY = 45.0f;
 float shootingAngleX = 0.0f;
+
+Caja* dummy = new Caja(&caja, glm::vec3(0.0f), glm::vec3(1.0f));
 
 void Escena1() {
 	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -2.1f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
@@ -101,8 +95,8 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, Keyboard::keyCallback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetCursorPosCallback(window, Mouse::cursorPosCallback);
+	glfwSetScrollCallback(window, Mouse::mouseWheelCallback);
 
 	// tell GLFW to capture our mouse
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -152,11 +146,11 @@ int main() {
 		//lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
 		lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		lightingShader.setVec3("lightPos", lightPos);
-		lightingShader.setVec3("viewPos", camera.Position);
+		lightingShader.setVec3("viewPos", camera.cameraPos);
 
 		// view/projection transformations
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(camera.getZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = camera.getViewMatrix();
 		lightingShader.setMat4("projection", projection);
 		lightingShader.setMat4("view", view);
 
@@ -192,17 +186,34 @@ void processInput(GLFWwindow* window, float dt)
 	if (Keyboard::key(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(window, true);
 
+	double dx = Mouse::getDX(), dy = Mouse::getDY();
+	if (dx != 0 || dy != 0) {
+		camera.updateCameraDirection(dx, dy);
+	}
+
+	// set camera zoom
+	double scrollDy = Mouse::getScrollDY();
+	if (scrollDy != 0) {
+		camera.updateCameraZoom(scrollDy);
+	}
+
 	if (Keyboard::key(GLFW_KEY_W))
-		camera.ProcessKeyboard(FORWARD, dt * 4);
+		camera.updateCameraPos(CameraDirection::FORWARD, dt);
 
 	if (Keyboard::key(GLFW_KEY_S))
-		camera.ProcessKeyboard(BACKWARD, dt * 4);
+		camera.updateCameraPos(CameraDirection::BACKWARD, dt);
 
 	if (Keyboard::key(GLFW_KEY_A))
-		camera.ProcessKeyboard(LEFT, dt * 4);
+		camera.updateCameraPos(CameraDirection::LEFT, dt);
 
 	if (Keyboard::key(GLFW_KEY_D))
-		camera.ProcessKeyboard(RIGHT, dt * 4);
+		camera.updateCameraPos(CameraDirection::RIGHT, dt);
+
+	if (Keyboard::key(GLFW_KEY_SPACE))
+		camera.updateCameraPos(CameraDirection::UP, dt);
+
+	if (Keyboard::key(GLFW_KEY_LEFT_CONTROL))
+		camera.updateCameraPos(CameraDirection::DOWN, dt);
 
 	if (Keyboard::keyWentDown(GLFW_KEY_UP)) {
 		shootingAngleY += 5.0f;
@@ -237,29 +248,34 @@ void processInput(GLFWwindow* window, float dt)
 	}
 
 	if (Keyboard::keyWentDown(GLFW_KEY_E)) {
-		if (!proyectil_listo) {
-			proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
-			proyectil->position = glm::vec3(0.0f);
-			//proyectil->velocity = glm::vec3(20.0f, 10.0f, 0);
-			//proyectil->angle = shootingAngle;
-			proyectil->push(100.0f, glm::vec3(
-				cos(glm::radians(shootingAngleY)),
-				sin(glm::radians(shootingAngleY)),
-				sin(glm::radians(shootingAngleX))
-			));
-			proyectil->accelerate(glm::vec3(0.0f, -9.81f, 0.0f));
+		proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
+		proyectil->push(100.0f, glm::vec3(
+			cos(glm::radians(shootingAngleY)),
+			sin(glm::radians(shootingAngleY)),
+			sin(glm::radians(shootingAngleX))
+		));
+		proyectil->accelerate(glm::vec3(0.0f, -9.81f, 0.0f));
 
-			proyectil->color = glm::vec3(1.0f, 0.1f, 0.1f);
-			proyectil->indices_size = esfera.indices_size;
-			proyectil->bv->transform(proyectil);
-			pObjetos.emplace_back(proyectil);
+		proyectil->color = glm::vec3(1.0f, 0.1f, 0.1f);
+		proyectil->indices_size = esfera.indices_size;
+		proyectil->bv->transform(proyectil);
+		pObjetos.emplace_back(proyectil);
 
-			proyectil_listo = true;
-		}
 	}
-	if (Keyboard::keyWentUp(GLFW_KEY_E)) {
-		proyectil_listo = false;
 
+	if (Keyboard::keyWentDown(GLFW_KEY_G)) {
+		float z = (-20.0f) + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (20.0f - (-20.0f))));
+		dummy = new Caja(&caja, glm::vec3(30.0f, 0.0f, z), glm::vec3(1.0f));
+		dummy->accelerate(glm::vec3(0.0f, -9.81f, 0.0f));
+
+		float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
+		dummy->color = glm::vec3(r, g, b);
+		dummy->indices_size = caja.indices_size;
+		dummy->bv->transform(dummy);
+		pObjetos.emplace_back(dummy);
 
 	}
 }
@@ -271,34 +287,4 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	// make sure the viewport matches the new window dimensions; note that width and
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
-}
-
-
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-	float xpos = static_cast<float>(xposIn);
-	float ypos = static_cast<float>(yposIn);
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-	lastX = xpos;
-	lastY = ypos;
-
-	camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
