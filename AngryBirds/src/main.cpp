@@ -10,6 +10,8 @@
 #include "Objeto.h"
 #include "BoundingVolume.h"
 
+#include "io/Keyboard.h"
+
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -46,39 +48,30 @@ Caja caja(glm::vec3(0.0f), glm::vec3(1.0f));
 bool proyectil_listo = false;
 Esfera* proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 
-float shootingAngle = 45.0f;
+float shootingAngleY = 45.0f;
+float shootingAngleX = 0.0f;
 
 void Escena1() {
-	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
+	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -2.1f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
+	plane->y_limit = -2.1f;
 	plane->fixed = true;
 	plane->bv->transform(plane);
-	plane->color = glm::vec3(0.2f, 0.2f, 0.2f);
+	plane->color = glm::vec3(0.6f, 0.6f, 0.6f);
 	pObjetos.emplace_back(plane);
 
-	Esfera* esfera1 = new Esfera(&esfera, glm::vec3(0.0f, 10.0f, 0.0f), glm::vec3(1.0f));
-	esfera1->fixed = true;
-	esfera1->bv->transform(esfera1);
-	esfera1->color = glm::vec3(1.0f, 0.0f, 0.0f);
-	pObjetos.emplace_back(esfera1);
-
-	/*Esfera* esfera2 = new Esfera(&esfera, glm::vec3(40.0f, 10.0f, 0.0f), glm::vec3(1.0f));
-	esfera2->fixed = true;
-	esfera2->bv->transform(esfera2);
-	pObjetos.emplace_back(esfera2);*/
-
-	Caja* caja1 = new Caja(&caja, glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	Caja* caja1 = new Caja(&caja, glm::vec3(30.0f, 5.0f, 0.0f), glm::vec3(1.0f));
 	caja1->fixed = true;
 	caja1->bv->transform(caja1);
 	caja1->color = glm::vec3(0.0f, 1.0f, 0.0f);
 	pObjetos.emplace_back(caja1);
 
-	Caja* caja2 = new Caja(&caja, glm::vec3(30.0f, 5.0f, 0.0f), glm::vec3(1.0f));
+	Caja* caja2 = new Caja(&caja, glm::vec3(30.0f, 5.0f, 5.0f), glm::vec3(1.0f));
 	caja2->fixed = true;
 	caja2->bv->transform(caja2);
 	caja2->color = glm::vec3(0.0f, 0.0f, 1.0f);
 	pObjetos.emplace_back(caja2);
 
-	Caja* caja3 = new Caja(&caja, glm::vec3(30.0f, 10.0f, 0.0f), glm::vec3(1.0f));
+	Caja* caja3 = new Caja(&caja, glm::vec3(30.0f, 5.0f, -5.0f), glm::vec3(1.0f));
 	caja3->fixed = true;
 	caja3->bv->transform(caja3);
 	caja3->color = glm::vec3(1.0f, 1.0f, 0.0f);
@@ -106,6 +99,7 @@ int main() {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
+	glfwSetKeyCallback(window, Keyboard::keyCallback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -195,46 +189,66 @@ int main() {
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow* window, float dt)
 {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	if (Keyboard::key(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(window, true);
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	if (Keyboard::key(GLFW_KEY_W))
 		camera.ProcessKeyboard(FORWARD, dt * 4);
 
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	if (Keyboard::key(GLFW_KEY_S))
 		camera.ProcessKeyboard(BACKWARD, dt * 4);
 
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	if (Keyboard::key(GLFW_KEY_A))
 		camera.ProcessKeyboard(LEFT, dt * 4);
 
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	if (Keyboard::key(GLFW_KEY_D))
 		camera.ProcessKeyboard(RIGHT, dt * 4);
 
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		shootingAngle += 5.0f;
-		if (shootingAngle > 90.0f) {
-			shootingAngle = 90.0f;
+	if (Keyboard::keyWentDown(GLFW_KEY_UP)) {
+		shootingAngleY += 5.0f;
+		if (shootingAngleY > 90.0f) {
+			shootingAngleY = 90.0f;
 		}
-		std::cout << "Angulo: " << shootingAngle << std::endl;
+		std::cout << "Angulo Y: " << shootingAngleY << std::endl;
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		shootingAngle -= 5.0f;
-		if (shootingAngle < 0.0f) {
-			shootingAngle = 0.0f;
+	if (Keyboard::keyWentDown(GLFW_KEY_DOWN)) {
+		shootingAngleY -= 5.0f;
+		if (shootingAngleY < 0.0f) {
+			shootingAngleY = 0.0f;
 		}
-		std::cout << "Angulo: " << shootingAngle << std::endl;
+		std::cout << "Angulo Y: " << shootingAngleY << std::endl;
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+	if (Keyboard::keyWentDown(GLFW_KEY_RIGHT)) {
+		shootingAngleX += 5.0f;
+		if (shootingAngleX > 45.0f) {
+			shootingAngleX = 45.0f;
+		}
+		std::cout << "Angulo X: " << shootingAngleX << std::endl;
+	}
+
+	if (Keyboard::keyWentDown(GLFW_KEY_LEFT)) {
+		shootingAngleX -= 5.0f;
+		if (shootingAngleX < -45.0f) {
+			shootingAngleX = -45.0f;
+		}
+		std::cout << "Angulo X: " << shootingAngleX << std::endl;
+	}
+
+	if (Keyboard::keyWentDown(GLFW_KEY_E)) {
 		if (!proyectil_listo) {
-			float x = rand() % 10;
-			float y = rand() % 10;
-
 			proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
-			proyectil->position = glm::vec3(x, y, 0.0f);
-			proyectil->velocity = glm::vec3(20.0f, 10.0f, 0);
-			proyectil->angle = shootingAngle;
+			proyectil->position = glm::vec3(0.0f);
+			//proyectil->velocity = glm::vec3(20.0f, 10.0f, 0);
+			//proyectil->angle = shootingAngle;
+			proyectil->push(100.0f, glm::vec3(
+				cos(glm::radians(shootingAngleY)),
+				sin(glm::radians(shootingAngleY)),
+				sin(glm::radians(shootingAngleX))
+			));
+			proyectil->accelerate(glm::vec3(0.0f, -9.81f, 0.0f));
+
 			proyectil->color = glm::vec3(1.0f, 0.1f, 0.1f);
 			proyectil->indices_size = esfera.indices_size;
 			proyectil->bv->transform(proyectil);
@@ -243,7 +257,7 @@ void processInput(GLFWwindow* window, float dt)
 			proyectil_listo = true;
 		}
 	}
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE) {
+	if (Keyboard::keyWentUp(GLFW_KEY_E)) {
 		proyectil_listo = false;
 
 

@@ -6,10 +6,10 @@
 #include "BoundingVolume.h"
 
 Objeto::Objeto()
-	: position(glm::vec3(0.0f)), size(glm::vec3(1.0f)), velocity(glm::vec3(0.0f)), direction(glm::vec3(0.0f)) {}
+	: position(glm::vec3(0.0f)), size(glm::vec3(1.0f)), mass(1.0f), velocity(glm::vec3(0.0f)), direction(glm::vec3(0.0f)), acceleration(0.0f, -9.81f, 0.0f) {}
 
 Objeto::Objeto(glm::vec3 position, glm::vec3 size)
-	: position(position), size(size), velocity(glm::vec3(0.0f)), direction(glm::vec3(0.0f)) {}
+	: position(position), size(size), mass(1.0f), velocity(glm::vec3(0.0f)), direction(glm::vec3(0.0f)), acceleration(0.0f, -9.81f, 0.0f) {}
 
 void Objeto::display(Shader& sh) {
 	model = glm::mat4(1.0f);
@@ -24,10 +24,27 @@ void Objeto::display(Shader& sh) {
 	}
 }
 
+void Objeto::accelerate(glm::vec3 a) {
+	acceleration += a;
+}
+
+void Objeto::push(float joules, glm::vec3 direction) {
+	if (joules == 0) {
+		return;
+	}
+
+	// comes from formula: KE = 1/2 * m * v^2
+	glm::vec3 deltaV = sqrt(2 * abs(joules) / mass) * direction;
+
+	velocity += joules > 0 ? deltaV : -deltaV;
+}
+
 void Objeto::calcularColision(std::vector<Objeto*> pObjetos) {
 	for (Objeto* obj : pObjetos) {
 		if (obj != this and bv->checkCollision(obj->bv)) {
-			obj->moverse(direction);
+			//obj->moverse(direction);
+			//obj->push();
+			obj->push(10.0f, velocity);
 		}
 	}
 }
@@ -115,11 +132,17 @@ void Esfera::setup() {
 }
 
 void Esfera::update(float dt) {
-	float g = fixed ? 0.0f : 9.81f;
+	/*float g = fixed ? 0.0f : 9.81f;
 	glm::vec3 ogPosition = position;
 	position.x = ogPosition.x + velocity.x * cos(glm::radians(angle)) * dt;
 	position.y = ogPosition.y + velocity.y * sin(glm::radians(angle)) * dt - 0.5 * g * dt * dt;
 	direction = position - ogPosition;
+	bv->transform(this);*/
+	position += velocity * dt + 0.5f * acceleration * (dt * dt);
+	velocity += acceleration * dt;
+	if (position.y < y_limit) {
+		position.y = y_limit;
+	}
 	bv->transform(this);
 }
 
@@ -249,11 +272,17 @@ void Caja::setup() {
 }
 
 void Caja::update(float dt) {
-	float g = 9.81f;
+	/*float g = 9.81f;
 	glm::vec3 ogPosition = position;
 	position.x = ogPosition.x + velocity.x * cos(glm::radians(angle)) * dt;
 	position.y = ogPosition.y + velocity.y * sin(glm::radians(angle)) * dt - 0.5 * g * dt * dt;
 	direction = position - ogPosition;
+	bv->transform(this);*/
+	position += velocity * dt + 0.5f * acceleration * (dt * dt);
+	velocity += acceleration * dt;
+	if (position.y < y_limit) {
+		position.y = y_limit;
+	}
 	bv->transform(this);
 }
 

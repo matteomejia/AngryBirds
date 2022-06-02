@@ -35,12 +35,14 @@ public:
 
 	ArrayObject VAO;
 
+	float y_limit = 0.0f;
+
 	glm::mat4 model;
 
 	BoundingVolume* bv;
 
 	glm::vec3 size, position;
-	glm::vec3 velocity, direction;
+	glm::vec3 velocity, direction, acceleration;
 	float angle, mass;
 
 	bool fixed = false;
@@ -54,7 +56,10 @@ public:
 
 	void display(Shader& sh);
 	void calcularColision(std::vector<Objeto*> pObjetos);
-	
+
+	void accelerate(glm::vec3 a);
+	void push(float joules, glm::vec3 direction);
+
 	virtual void update(float dt) = 0;
 	virtual void moverse(glm::vec3 dir) = 0;
 };
