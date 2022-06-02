@@ -15,37 +15,43 @@
 
 #include <iostream>
 
+// callback de resolucion
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
+// procesar input
 void processInput(GLFWwindow* window, float dt);
 
-// settings
+// resolucion
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-// camera
+// camara
 Camera camera(glm::vec3(0.0f, 0.0f, 50.0f));
 
-// timing
-double dt = 0.0f; // tme btwn frames
-double lastFrame = 0.0f; // time of last frame
+// tiempo
+double dt = 0.0f;
+double lastFrame = 0.0f;
 
-// lighting
+// luz punto
 glm::vec3 lightPos(0.0f, 10.0f, 0.0f);
-GLuint luna_vao;
-int luna_numIndices;
 
+// vector de objetos
 std::vector<Objeto*> pObjetos;
 
+// instancias maestras
 Esfera esfera(glm::vec3(0.0f), glm::vec3(1.0f));
 Caja caja(glm::vec3(0.0f), glm::vec3(1.0f));
 
+// instancias de uso multiple
 Esfera* proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 float shootingAngleY = 45.0f;
 float shootingAngleX = 0.0f;
 
 Caja* dummy = new Caja(&caja, glm::vec3(0.0f), glm::vec3(1.0f));
 
-void Escena1() {
+void scene() {
+	// escena de prueba
+
 	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -2.1f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
 	plane->y_limit = -2.1f;
 	plane->fixed = true;
@@ -73,19 +79,12 @@ void Escena1() {
 }
 
 int main() {
-	// glfw: initialize and configure
-	// ------------------------------
+	// inicializacion
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-	// glfw window creation
-	// --------------------
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -93,110 +92,105 @@ int main() {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
+
+	// callbacks estaticos
 	glfwSetKeyCallback(window, Keyboard::keyCallback);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, Mouse::cursorPosCallback);
 	glfwSetScrollCallback(window, Mouse::mouseWheelCallback);
+	// callback de resolucion
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-	// tell GLFW to capture our mouse
-	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	// glad: load all OpenGL function pointers
-	// ---------------------------------------
+	// GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
 
-	// configure global opengl state
-	// -----------------------------
+	// extras de openGL
 	glEnable(GL_DEPTH_TEST);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // disable cursor
 
-	// build and compile our shader zprogram
-	// ------------------------------------
+	// shaders
 	Shader lightingShader("resources/shaders/basic.vert", "resources/shaders/basic.frag");
 	Shader boxShader("resources/shaders/box.vert", "resources/shaders/box.frag");
-	//Shader lightCubeShader("../2.2.light_cube.vs", "../2.2.light_cube.fs");
 
+	// iniciar instancias maestras
 	esfera.init();
 	esfera.setup();
 
 	caja.init();
 	caja.setup();
 
-	Escena1();
+	// preparar escena
+	scene();
 
-
-	// render loop
+	// bucle principal
 	while (!glfwWindowShouldClose(window)) {
-		// per-frame time logic
+		// tiempo
 		double currentTime = glfwGetTime();
 		dt = currentTime - lastFrame;
 		lastFrame = currentTime;
 
+		// input
 		processInput(window, dt);
 
-		// render
+		// limpiar escena
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// be sure to activate shader when setting uniforms/drawing objects
+		// actualizar shader
 		lightingShader.use();
-		//lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
 		lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		lightingShader.setVec3("lightPos", lightPos);
 		lightingShader.setVec3("viewPos", camera.cameraPos);
 
-		// view/projection transformations
+		// calcular matrices
 		glm::mat4 projection = glm::perspective(glm::radians(camera.getZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.getViewMatrix();
 		lightingShader.setMat4("projection", projection);
 		lightingShader.setMat4("view", view);
 
+		// renderizar objetos
 		for (auto& obj : pObjetos) {
 			obj->update(dt);
 			// calcular si hay colision
-			obj->calcularColision(pObjetos);
+			obj->checkCollisions(pObjetos);
 			obj->display(lightingShader);
 		}
 
-
-		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-		// -------------------------------------------------------------------------------
+		// preparar siguiente frame
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-	// optional: de-allocate all resources once they've outlived their purpose:
-	// ------------------------------------------------------------------------
-	//glDeleteVertexArrays(1, luna_vao);
-	//glDeleteVertexArrays(1, &lightCubeVAO);
-	//glDeleteBuffers(1, &VBO);
 
-	// glfw: terminate, clearing all previously allocated GLFW resources.
-	// ------------------------------------------------------------------
+	// limpieza
+
+
+	// finalizar
 	glfwTerminate();
 	return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
+// procesar input
 void processInput(GLFWwindow* window, float dt)
 {
+	// cierre
 	if (Keyboard::key(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(window, true);
 
+	// posicion del cursor
 	double dx = Mouse::getDX(), dy = Mouse::getDY();
 	if (dx != 0 || dy != 0) {
 		camera.updateCameraDirection(dx, dy);
 	}
 
-	// set camera zoom
+	// zoom
 	double scrollDy = Mouse::getScrollDY();
 	if (scrollDy != 0) {
 		camera.updateCameraZoom(scrollDy);
 	}
 
+	// mover camara
 	if (Keyboard::key(GLFW_KEY_W))
 		camera.updateCameraPos(CameraDirection::FORWARD, dt);
 
@@ -215,6 +209,7 @@ void processInput(GLFWwindow* window, float dt)
 	if (Keyboard::key(GLFW_KEY_LEFT_CONTROL))
 		camera.updateCameraPos(CameraDirection::DOWN, dt);
 
+	// angulo para disparar esfera
 	if (Keyboard::keyWentDown(GLFW_KEY_UP)) {
 		shootingAngleY += 5.0f;
 		if (shootingAngleY > 90.0f) {
@@ -247,6 +242,7 @@ void processInput(GLFWwindow* window, float dt)
 		std::cout << "Angulo X: " << shootingAngleX << std::endl;
 	}
 
+	// disparar esfera
 	if (Keyboard::keyWentDown(GLFW_KEY_E)) {
 		proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 		proyectil->push(100.0f, glm::vec3(
@@ -263,6 +259,7 @@ void processInput(GLFWwindow* window, float dt)
 
 	}
 
+	// generar caja
 	if (Keyboard::keyWentDown(GLFW_KEY_G)) {
 		float z = (-20.0f) + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (20.0f - (-20.0f))));
 		dummy = new Caja(&caja, glm::vec3(30.0f, 0.0f, z), glm::vec3(1.0f));
@@ -280,11 +277,8 @@ void processInput(GLFWwindow* window, float dt)
 	}
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
+// callback de resolucion
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	// make sure the viewport matches the new window dimensions; note that width and
-	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
 }

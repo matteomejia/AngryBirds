@@ -1,7 +1,3 @@
-//
-// Created by hgallegos on 20/05/2022.
-//
-
 #ifndef OBJETO_H
 #define OBJETO_H
 
@@ -17,55 +13,70 @@
 #include <cmath>
 
 #include "shader_m.h"
-#include "Memory.hpp"
+#include "Memory.h"
 
 class BoundingVolume;
 class BoundingRegion;
 
 class Objeto {
 public:
+	// vectores de posicion, normales, coordenadas, indices
 	std::vector<glm::vec3> positions;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> textureCoords;
 	std::vector<GLuint> indices;
 
+	// color
 	glm::vec3 color = glm::vec3(1.0f);
 
 	GLuint indices_size;
 
+	// aqui se guardan los VBOs y el EBO en el diccionario
 	ArrayObject VAO;
+	BufferObject EBO;
+	BufferObject posVBO;
+	BufferObject normalVBO;
+	BufferObject texVBO;
 
+	// para que no se caigan infinitamente
 	float y_limit = 0.0f;
 
+	// matriz de modelo
 	glm::mat4 model;
 
+	// para colisiones
 	BoundingVolume* bv;
 
+	// variables
 	glm::vec3 size, position;
 	glm::vec3 velocity, direction, acceleration;
 	float angle, mass;
-
 	bool fixed = false;
-	bool visible = true;
 
+	// constructores
 	Objeto();
 	Objeto(glm::vec3 position, glm::vec3 size);
 
 	virtual void init() = 0;
 	virtual void setup() = 0;
 
+	// renderizar
 	void display(Shader& sh);
-	void calcularColision(std::vector<Objeto*> pObjetos);
+	// detectar colisiones
+	void checkCollisions(std::vector<Objeto*> pObjetos);
 
+	// actualiza la acceleracion
 	void accelerate(glm::vec3 a);
-	void push(float joules, glm::vec3 direction);
+	// simula un impulso
+	void push(float magnitude, glm::vec3 direction);
 
+	// actualizar instancia
 	virtual void update(float dt) = 0;
-	virtual void moverse(glm::vec3 dir) = 0;
 };
 
 class Esfera : public Objeto {
 public:
+	// exclusivo de esfera
 	glm::vec3 center = glm::vec3(0.0f);
 	float radius = 1.0f;
 	int slices = 100, stacks = 100;
@@ -76,11 +87,11 @@ public:
 	void init();
 	void setup();
 	void update(float dt);
-	void moverse(glm::vec3 dir);
 };
 
 class Caja : public Objeto {
 public:
+	// exclusivo de caja
 	glm::vec3 posmin = glm::vec3(-1.0f);
 	glm::vec3 posmax = glm::vec3(1.0f);
 
@@ -90,7 +101,6 @@ public:
 	void init();
 	void setup();
 	void update(float dt);
-	void moverse(glm::vec3 dir);
 };
 
-#endif //LEARNOPENGL_OBJETO_H
+#endif

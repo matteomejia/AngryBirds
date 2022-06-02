@@ -1,10 +1,6 @@
 #include "camera.h"
 
-/*
-	constructor
-*/
-
-// default and initialize with position
+// constructor
 Camera::Camera(glm::vec3 position)
 	: cameraPos(position),
 	worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),
@@ -18,11 +14,7 @@ Camera::Camera(glm::vec3 position)
 	updateCameraVectors();
 }
 
-/*
-	modifiers
-*/
-
-// change camera direction (mouse movement)
+// actualizar direccion
 void Camera::updateCameraDirection(double dx, double dy)
 {
 	yaw += dx;
@@ -40,7 +32,7 @@ void Camera::updateCameraDirection(double dx, double dy)
 	updateCameraVectors();
 }
 
-// change camera position in certain direction (keyboard)
+// actualizar posicion
 void Camera::updateCameraPos(CameraDirection dir, double dt)
 {
 	float velocity = (float)dt * speed;
@@ -68,7 +60,7 @@ void Camera::updateCameraPos(CameraDirection dir, double dt)
 	}
 }
 
-// change camera zoom (scroll wheel)
+// actualizar zoom
 void Camera::updateCameraZoom(double dy)
 {
 	if (zoom >= 1.0f && zoom <= 45.0f)
@@ -80,30 +72,23 @@ void Camera::updateCameraZoom(double dy)
 		zoom = 1.0f;
 	}
 	else
-	{ // > 45.0f
+	{
 		zoom = 45.0f;
 	}
 }
 
-/*
-	accessors
-*/
-
+// zoom
 float Camera::getZoom() {
 	return zoom;
 }
 
-// get view matrix for camera
+// matriz de vista
 glm::mat4 Camera::getViewMatrix()
 {
 	return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 }
 
-/*
-	private modifier
-*/
-
-// change camera directional vectors based on movement
+// actualizar vectores
 void Camera::updateCameraVectors()
 {
 	glm::vec3 direction;

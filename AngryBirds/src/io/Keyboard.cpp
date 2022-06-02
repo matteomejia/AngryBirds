@@ -1,62 +1,51 @@
 #include "keyboard.h"
 
-/*
-    define initial static values
-*/
 
-// key state array (true for down, false for up)
+// array para guardar los estados de las teclas
 bool Keyboard::keys[GLFW_KEY_LAST] = { 0 };
-// key changed array (true if changed)
+
+// array que indica si el estado ha cambiado
 bool Keyboard::keysChanged[GLFW_KEY_LAST] = { 0 };
 
-/*
-    static callback
-*/
-
-// key state changed
+// funcion de callback
 void Keyboard::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (action != GLFW_RELEASE)
-    {
-        if (!keys[key])
-        {
-            keys[key] = true;
-        }
-    }
-    else
-    {
-        keys[key] = false;
-    }
-    keysChanged[key] = action != GLFW_REPEAT;
+	if (action != GLFW_RELEASE)
+	{ // si es una tecla levantada
+		if (!keys[key])
+		{
+			keys[key] = true;
+		}
+	}
+	else
+	{ // si es una tecla presionada
+		keys[key] = false;
+	}
+	keysChanged[key] = action != GLFW_REPEAT;
 }
 
-/*
-    static accessors
-*/
-
-// get key state
+// devuelve el estado de una tecla
 bool Keyboard::key(int key)
 {
-    return keys[key];
+	return keys[key];
 }
 
-// get if key recently changed
+// devuelve si el estado cambio, sirve para evitar registrar toques seguidos
 bool Keyboard::keyChanged(int key)
 {
-    bool ret = keysChanged[key];
-    // set to false because change no longer new
-    keysChanged[key] = false;
-    return ret;
+	bool ret = keysChanged[key];
+	keysChanged[key] = false;
+	return ret;
 }
 
-// get if key recently changed and is up
+// tecla es presionada
 bool Keyboard::keyWentDown(int key)
 {
-    return keys[key] && keyChanged(key);
+	return keys[key] && keyChanged(key);
 }
 
-// get if key recently changed and is down
+// tecla es levantada
 bool Keyboard::keyWentUp(int key)
 {
-    return !keys[key] && keyChanged(key);
+	return !keys[key] && keyChanged(key);
 }

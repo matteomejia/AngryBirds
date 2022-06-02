@@ -4,44 +4,24 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-/*
-    keyboard class to handle keyboard callbacks
-*/
-
 class Keyboard
 {
 public:
-    /*
-        static callback
-    */
-
-    // key state changed
+    //callback
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-
-    /*
-        static accessors
-    */
-
-    // get key state
+    // devuelve el estado de una tecla
     static bool key(int key);
-
-    // get if key recently changed
+    // devuelve si el estado de una tecla ha cambiado
     static bool keyChanged(int key);
-
-    // get if key recently changed and is up
+    // devuelve si una tecla se ha levantado
     static bool keyWentUp(int key);
-
-    // get if key recently changed and is down
+    // devuelve si una tecla se ha presionado
     static bool keyWentDown(int key);
 
 private:
-    /*
-        static keyboard values
-    */
-
-    // key state array (true for down, false for up)
+    // array de estados
     static bool keys[];
-    // key changed array (true if changed)
+    // array de cambios
     static bool keysChanged[];
 };
 
