@@ -48,14 +48,16 @@ Esfera* proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 
 
 void Escena1() {
-	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -10.0f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
+	Caja* plane = new Caja(&caja, glm::vec3(0.0f, -12.0f, 0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
 	plane->fixed = true;
 	plane->bv->transform(plane);
+	plane->color = glm::vec3(0.2f, 0.2f, 0.2f);
 	pObjetos.emplace_back(plane);
 
-	Esfera* esfera1 = new Esfera(&esfera, glm::vec3(0.0f, 00.0f, 0.0f), glm::vec3(1.0f));
-	esfera1->fixed = false;
+	Esfera* esfera1 = new Esfera(&esfera, glm::vec3(0.0f, 10.0f, 0.0f), glm::vec3(1.0f));
+	esfera1->fixed = true;
 	esfera1->bv->transform(esfera1);
+	esfera1->color = glm::vec3(1.0f, 0.0f, 0.0f);
 	pObjetos.emplace_back(esfera1);
 
 	/*Esfera* esfera2 = new Esfera(&esfera, glm::vec3(40.0f, 10.0f, 0.0f), glm::vec3(1.0f));
@@ -63,20 +65,23 @@ void Escena1() {
 	esfera2->bv->transform(esfera2);
 	pObjetos.emplace_back(esfera2);*/
 
-	Caja* caja1 = new Caja(&caja, glm::vec3(10.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	caja1->fixed = false;
+	Caja* caja1 = new Caja(&caja, glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	caja1->fixed = true;
 	caja1->bv->transform(caja1);
+	caja1->color = glm::vec3(0.0f, 1.0f, 0.0f);
 	pObjetos.emplace_back(caja1);
 
-	/*Caja* caja2 = new Caja(&caja, glm::vec3(30.0f, 10.0f, 0.0f), glm::vec3(2.0f));
+	Caja* caja2 = new Caja(&caja, glm::vec3(30.0f, 5.0f, 0.0f), glm::vec3(1.0f));
 	caja2->fixed = true;
 	caja2->bv->transform(caja2);
-	pObjetos.emplace_back(caja2);*/
+	caja2->color = glm::vec3(0.0f, 0.0f, 1.0f);
+	pObjetos.emplace_back(caja2);
 
-	/*Caja* caja3 = new Caja(&caja, glm::vec3(30.0f, 15.0f, 0.0f), glm::vec3(2.0f));
+	Caja* caja3 = new Caja(&caja, glm::vec3(30.0f, 10.0f, 0.0f), glm::vec3(1.0f));
 	caja3->fixed = true;
 	caja3->bv->transform(caja3);
-	pObjetos.emplace_back(caja3);*/
+	caja3->color = glm::vec3(1.0f, 1.0f, 0.0f);
+	pObjetos.emplace_back(caja3);
 }
 
 int main() {
@@ -149,7 +154,7 @@ int main() {
 
 		// be sure to activate shader when setting uniforms/drawing objects
 		lightingShader.use();
-		lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+		//lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
 		lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 		lightingShader.setVec3("lightPos", lightPos);
 		lightingShader.setVec3("viewPos", camera.Position);
@@ -161,9 +166,7 @@ int main() {
 		lightingShader.setMat4("view", view);
 
 		for (auto& obj : pObjetos) {
-			if (!obj->fixed) {
-				obj->update(dt);
-			}
+			obj->update(dt);
 			// calcular si hay colision
 			obj->calcularColision(pObjetos);
 			obj->display(lightingShader);
@@ -209,8 +212,9 @@ void processInput(GLFWwindow* window, float dt)
 
 			proyectil = new Esfera(&esfera, glm::vec3(0.0f), glm::vec3(1.0f));
 			proyectil->position = glm::vec3(x, y, 0.0f);
-			proyectil->velocity = glm::vec3(20.0f, 10.0f, 0.0f);
-			proyectil->angle = 20.0f;
+			proyectil->velocity = glm::vec3(2, 1, 0);
+			proyectil->angle = 30.0f;
+			proyectil->color = glm::vec3(1.0f, 0.1f, 0.1f);
 			proyectil->indices_size = esfera.indices_size;
 			proyectil->bv->transform(proyectil);
 			pObjetos.emplace_back(proyectil);

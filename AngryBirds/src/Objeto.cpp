@@ -16,6 +16,7 @@ void Objeto::display(Shader& sh) {
 	model = glm::scale(model, size);
 	model = glm::translate(model, position);
 	sh.setMat4("model", model);
+	sh.setVec3("objectColor", color);
 	if (visible) {
 		VAO.bind();
 		VAO.draw(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, indices.data());
@@ -122,6 +123,8 @@ void Esfera::setup() {
 
 void Esfera::update(float dt) {
 	float g = 9.81f;
+	if (fixed) return;
+
 	glm::vec3 ogPosition = position;
 	position.x = ogPosition.x + velocity.x * cos(glm::radians(angle)) * dt;
 	position.y = ogPosition.y + velocity.y * sin(glm::radians(angle)) * dt - 0.5 * g * dt * dt;

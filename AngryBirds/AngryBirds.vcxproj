@@ -139,14 +139,12 @@
     <ClCompile Include="src\BoundingVolume.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Objeto.cpp" />
-    <ClCompile Include="src\RigidBody.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\BoundingVolume.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Memory.hpp" />
     <ClInclude Include="src\Objeto.h" />
-    <ClInclude Include="src\RigidBody.h" />
     <ClInclude Include="src\shader_m.h" />
   </ItemGroup>
   <ItemGroup>

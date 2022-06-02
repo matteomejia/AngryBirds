@@ -18,7 +18,6 @@
 
 #include "shader_m.h"
 #include "Memory.hpp"
-#include "RigidBody.h"
 
 class BoundingVolume;
 class BoundingRegion;
@@ -30,6 +29,8 @@ public:
 	std::vector<glm::vec2> textureCoords;
 	std::vector<GLuint> indices;
 
+	glm::vec3 color = glm::vec3(1.0f);
+
 	GLuint indices_size;
 
 	ArrayObject VAO;
@@ -40,7 +41,7 @@ public:
 
 	glm::vec3 size, position;
 	glm::vec3 velocity, direction;
-	float angle;
+	float angle, mass;
 
 	bool fixed = false;
 	bool visible = true;
@@ -52,9 +53,9 @@ public:
 	virtual void setup() = 0;
 
 	void display(Shader& sh);
-	virtual void update(float dt) = 0;
-
 	void calcularColision(std::vector<Objeto*> pObjetos);
+	
+	virtual void update(float dt) = 0;
 	virtual void moverse(glm::vec3 dir) = 0;
 };
 
