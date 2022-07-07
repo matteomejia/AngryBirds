@@ -48,6 +48,7 @@ int main() {
 	Shader modelShader("resources/shaders/model.vert", "resources/shaders/model.frag");
 
 	Model skull("resources/models/skull/skull.obj");
+	glm::vec3 modelColor = glm::vec3(0.89f, 0.855f, 0.788f);
 
 	//scene.addObject(medical);
 
@@ -65,6 +66,11 @@ int main() {
 		scene.update();
 
 		modelShader.use();
+
+		modelShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		modelShader.setVec3("lightPos", lightPos);
+		modelShader.setVec3("viewPos", scene.camera->cameraPos);
+		modelShader.setVec3("objectColor", modelColor);
 
 		glm::mat4 projection = glm::perspective(glm::radians(scene.camera->getZoom()), (float)Scene::scrWidth / (float)Scene::scrHeight, 0.1f, 100.0f);
 		glm::mat4 view = scene.camera->getViewMatrix();
