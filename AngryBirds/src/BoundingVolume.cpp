@@ -32,6 +32,10 @@ void BoundingVolume::transform(Caja* caja) {
 	}
 }
 
+void BoundingVolume::transform(Medical* medical) {
+
+}
+
 // probar colisiones, se tiene que probar segun las combinaciones de tipos
 bool BoundingVolume::checkCollisions(BoundingVolume* bv) {
 	if (type == BoundType::AABB && bv->type == BoundType::AABB) {

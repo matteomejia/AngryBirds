@@ -72,22 +72,22 @@ void Scene::processInput(float dt) {
 
 	// posicion de la camara
 	if (Keyboard::key(GLFW_KEY_W)) {
-		camera->updateCameraPos(CameraDirection::FORWARD, dt);
+		camera->updateCameraPos(CameraDirection::FORWARD, dt * 5);
 	}
 	if (Keyboard::key(GLFW_KEY_S)) {
-		camera->updateCameraPos(CameraDirection::BACKWARD, dt);
+		camera->updateCameraPos(CameraDirection::BACKWARD, dt * 5);
 	}
 	if (Keyboard::key(GLFW_KEY_D)) {
-		camera->updateCameraPos(CameraDirection::RIGHT, dt);
+		camera->updateCameraPos(CameraDirection::RIGHT, dt * 5);
 	}
 	if (Keyboard::key(GLFW_KEY_A)) {
-		camera->updateCameraPos(CameraDirection::LEFT, dt);
+		camera->updateCameraPos(CameraDirection::LEFT, dt * 5);
 	}
 	if (Keyboard::key(GLFW_KEY_SPACE)) {
-		camera->updateCameraPos(CameraDirection::UP, dt);
+		camera->updateCameraPos(CameraDirection::UP, dt * 5);
 	}
 	if (Keyboard::key(GLFW_KEY_LEFT_CONTROL)) {
-		camera->updateCameraPos(CameraDirection::DOWN, dt);
+		camera->updateCameraPos(CameraDirection::DOWN, dt * 5);
 	}
 
 	// matrices
@@ -104,7 +104,7 @@ void Scene::processInput(float dt) {
 
 // limpiar ventana
 void Scene::update() {
-	glClearColor(0.1f, 0.15f, 0.15f, 1.0f);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -130,6 +130,15 @@ void Scene::renderShader(Shader& shader, glm::vec3 lightPos) {
 	shader.setMat4("view", view);
 }
 
+void Scene::renderNormalShader(Shader& shader, glm::vec3 lightPos) {
+	shader.use();
+	shader.setMat4("projection", projection);
+	shader.setMat4("view", view);
+	// normal-mapped quad
+	shader.setVec3("viewPos", camera->cameraPos);
+	shader.setVec3("lightPos", lightPos);
+}
+
 // renderizar objetos
 void Scene::render(Shader& shader, float dt) {
 	for (auto& obj : objects) {
@@ -137,6 +146,16 @@ void Scene::render(Shader& shader, float dt) {
 		obj->checkCollisions(objects);
 		obj->display(shader);
 	}
+}
+
+void Scene::renderOne(Shader& shader, float dt, Objeto* obj) {
+	//obj->update(dt);
+	obj->display(shader);
+}
+
+void Scene::renderQuad(Shader& shader, float dt, Quad* quad) {
+	//obj->update(dt);
+	quad->display(shader);
 }
 
 // cerrar ventana

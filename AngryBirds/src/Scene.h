@@ -16,6 +16,8 @@
 
 class Scene {
 public:
+	static unsigned int scrWidth;
+	static unsigned int scrHeight;
 
 	// objetos y camara
 	std::vector<Objeto*> objects;
@@ -46,6 +48,15 @@ public:
 	// preparar shader
 	void renderShader(Shader& shader, glm::vec3 ligtPos);
 
+	// preparar shader de normales
+	void renderNormalShader(Shader& shader, glm::vec3 lightPos);
+
+	// render sin collision
+	void renderOne(Shader& shader, float dt, Objeto* obj);
+
+	// especial
+	void renderQuad(Shader& shader, float dt, Quad* quad);
+
 	// renderizar objetos
 	void render(Shader& shader, float dt);
 
@@ -65,8 +76,6 @@ protected:
 	GLFWwindow* window;
 
 	const char* title;
-	static unsigned int scrWidth;
-	static unsigned int scrHeight;
 
 	int versionMinor;
 	int versionMajor;

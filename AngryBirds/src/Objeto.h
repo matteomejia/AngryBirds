@@ -24,6 +24,11 @@ public:
 	std::vector<glm::vec3> positions;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> textureCoords;
+
+	// si se usa normal maps
+	std::vector<glm::vec3> tangents;
+	std::vector<glm::vec3> bitangents;
+
 	std::vector<GLuint> indices;
 
 	// color
@@ -38,6 +43,10 @@ public:
 	BufferObject posVBO;
 	BufferObject normalVBO;
 	BufferObject texVBO;
+
+	// normal maps
+	BufferObject tangentVBO;
+	BufferObject bitangentVBO;
 
 	// para que no se caigan infinitamente
 	float y_limit = 0.0f;
@@ -102,6 +111,31 @@ public:
 	void init();
 	void setup();
 	void update(float dt);
+};
+
+class Quad : public Objeto {
+public:
+	Quad(glm::vec3 position, glm::vec3 size);
+	Quad(Quad* quad, glm::vec3 position, glm::vec3 size);
+
+	void init();
+	void setup();
+	void update(float dt);
+
+	void display(Shader& sh);
+};
+
+class Medical : public Objeto {
+public:
+	Medical(glm::vec3 position, glm::vec3 size);
+	Medical(Medical* medical, glm::vec3 position, glm::vec3 size);
+
+	void init();
+	void setup();
+	void update(float dt);
+
+	void display(Shader& sh);
+
 };
 
 #endif

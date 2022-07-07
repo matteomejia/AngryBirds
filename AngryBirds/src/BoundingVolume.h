@@ -34,6 +34,7 @@ public:
 	bool checkCollisions(BoundingVolume* bv);
 	void transform(Esfera* sphere);
 	void transform(Caja* caja);
+	void transform(Medical* medical);
 };
 
 #endif

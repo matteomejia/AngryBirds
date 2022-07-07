@@ -68,9 +68,29 @@
     <ClInclude Include="src\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="assimp-vc143-mtd.dll" />
     <None Include="glfw3.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\matte\Downloads\brickwall.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="C:\Users\matte\Downloads\brickwall_normal.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="\\wsl.localhost\Ubuntu\home\matteomejia\UTEC\Grafica\proyecto3\points\vertices.txt" />
   </ItemGroup>
 </Project>

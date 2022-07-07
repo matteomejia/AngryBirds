@@ -67,6 +67,10 @@ public:
 		glDrawElements(mode, count, type, (void*)indices);
 	}
 
+	void drawArrays(GLenum mode, GLuint first, GLuint count) {
+		glDrawArrays(mode, first, count);
+	}
+
 	void cleanup() {
 		glDeleteVertexArrays(1, &val);
 	}
